@@ -82,8 +82,8 @@ def ejemplo_2_comparacion_bases():
     configuraciones = [
         {'nombre': 'Base 2 - Potencia 256', 'base': 2, 'potencia': 256, 'bits': 100},
         {'nombre': 'Base 5 - Potencia 625', 'base': 5, 'potencia': 625, 'bits': 100},
-        {'nombre': 'Base 2 - Potencia 65536', 'base': 2, 'potencia': 65536, 'bits': 200},
-        {'nombre': 'Base 5 - Potencia 125', 'base': 5, 'potencia': 125, 'bits': 50},
+        {'nombre': 'Base 2 - Potencia 512', 'base': 2, 'potencia': 512, 'bits': 200},
+        {'nombre': 'Base 5 - Potencia 3125', 'base': 5, 'potencia': 3125, 'bits': 50},
     ]
     
     print(f"\n{'Configuración':<30} {'Bloques':<10} {'T.Cod(s)':<12} {'T.Dec(s)':<12} {'OK':<5}")
@@ -221,38 +221,36 @@ def ejemplo_5_todas_potencias():
     print("BASE 2 - Potencias Permitidas")
     print(f"{'─'*80}")
     
-    potencias_base2 = [2, 4, 16, 256, 65536, 4294967296, 18446744073709551616]
-    exponentes_base2 = [1, 2, 4, 8, 16, 32, 64]
+    potencias_base2 = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
     
     print(f"\n{'Potencia (2^n)':<25} {'Valor':<25} {'Bloques':<10} {'Reversible':<12}")
     print("-" * 80)
     
-    for pot, exp in zip(potencias_base2, exponentes_base2):
+    for pot in potencias_base2:
         codificador = CodificadorUniversal(base=2, potencia=pot, bits_por_bloque=50, verbose=False)
         cod = codificador.codificar(datos_binarios)
         dec = codificador.decodificar(cod)
         ok = datos_binarios == dec
         
-        print(f"2^{exp:<22} {pot:<25} {cod['num_bloques']:<10} {'✓ SÍ' if ok else '✗ NO':<12}")
+        print(f"{pot:<25} {pot:<25} {cod['num_bloques']:<10} {'✓ SÍ' if ok else '✗ NO':<12}")
     
     # Base 5
     print(f"\n{'─'*80}")
     print("BASE 5 - Potencias Permitidas")
     print(f"{'─'*80}")
     
-    potencias_base5 = [5, 25, 125, 625]
-    exponentes_base5 = [1, 2, 3, 4]
+    potencias_base5 = [25, 125, 625, 3125, 15625]
     
     print(f"\n{'Potencia (5^n)':<25} {'Valor':<25} {'Bloques':<10} {'Reversible':<12}")
     print("-" * 80)
     
-    for pot, exp in zip(potencias_base5, exponentes_base5):
+    for pot in potencias_base5:
         codificador = CodificadorUniversal(base=5, potencia=pot, bits_por_bloque=50, verbose=False)
         cod = codificador.codificar(datos_binarios)
         dec = codificador.decodificar(cod)
         ok = datos_binarios == dec
         
-        print(f"5^{exp:<22} {pot:<25} {cod['num_bloques']:<10} {'✓ SÍ' if ok else '✗ NO':<12}")
+        print(f"{pot:<25} {pot:<25} {cod['num_bloques']:<10} {'✓ SÍ' if ok else '✗ NO':<12}")
 
 
 def ejemplo_6_analisis_expansion():
@@ -323,6 +321,47 @@ def ejemplo_7_verbose_detallado():
     print(f"Coincide: {'✓ SÍ' if texto == texto_reconstruido else '✗ NO'}")
 
 
+
+
+def ejemplo_8_codificacion_imagen():
+    """Ejemplo 8: Codificación/decodificación de imagen (archivo binario)"""
+    print("\n" + "="*80)
+    print("EJEMPLO 8: Codificación y Decodificación de Imagen")
+    print("="*80)
+
+    import tempfile
+    import os
+    from codificador_universal import codificar_archivo_entrada, decodificar_a_archivo_salida
+
+    datos_imagen = bytes((i * 19) % 256 for i in range(1024))
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        ruta_origen = os.path.join(tmp_dir, "imagen_origen.bin")
+        ruta_salida = os.path.join(tmp_dir, "imagen_salida.bin")
+
+        with open(ruta_origen, 'wb') as f:
+            f.write(datos_imagen)
+
+        cod = codificar_archivo_entrada(
+            ruta_entrada=ruta_origen,
+            base=2,
+            potencia=256,
+            bits_por_bloque=80,
+            verbose=False
+        )
+
+        decodificar_a_archivo_salida(cod, ruta_salida, verbose=False)
+
+        with open(ruta_origen, 'rb') as f:
+            original = f.read()
+        with open(ruta_salida, 'rb') as f:
+            reconstruida = f.read()
+
+        print(f"Archivo original: {len(original)} bytes")
+        print(f"Archivo reconstruido: {len(reconstruida)} bytes")
+        print(f"Coinciden: {'✓ SÍ' if original == reconstruida else '✗ NO'}")
+
+
 def ejecutar_todos_ejemplos():
     """Ejecuta todos los ejemplos en secuencia"""
     print("\n" + "█"*80)
@@ -338,7 +377,8 @@ def ejecutar_todos_ejemplos():
         ejemplo_4_padding_detallado,
         ejemplo_5_todas_potencias,
         ejemplo_6_analisis_expansion,
-        ejemplo_7_verbose_detallado
+        ejemplo_7_verbose_detallado,
+        ejemplo_8_codificacion_imagen
     ]
     
     for ejemplo in ejemplos:

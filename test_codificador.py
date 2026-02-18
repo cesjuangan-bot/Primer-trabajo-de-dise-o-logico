@@ -10,7 +10,9 @@ from codificador_universal import (
     AnalizadorEficiencia,
     ConfiguracionInvalidaError,
     bytes_a_binario,
-    binario_a_bytes
+    binario_a_bytes,
+    codificar_archivo_entrada,
+    decodificar_a_archivo_salida
 )
 import time
 
@@ -35,16 +37,16 @@ def prueba_validacion_parametros():
             'debe_fallar': True
         },
         {
-            'nombre': 'Potencia inválida para base 2 (2^3)',
+            'nombre': 'Potencia inválida para base 2 (2)',
             'base': 2,
-            'potencia': 8,  # 2^3 no está permitido
+            'potencia': 2,  # 2 no está permitido
             'bits': 40,
             'debe_fallar': True
         },
         {
-            'nombre': 'Potencia inválida para base 5 (5^5)',
+            'nombre': 'Potencia inválida para base 5 (5)',
             'base': 5,
-            'potencia': 3125,  # 5^5 no está permitido
+            'potencia': 5,  # 5 no está permitido
             'bits': 40,
             'debe_fallar': True
         },
@@ -63,14 +65,14 @@ def prueba_validacion_parametros():
             'debe_fallar': True
         },
         {
-            'nombre': 'Configuración válida: Base 2, Potencia 256 (2^8), 100 bits',
+            'nombre': 'Configuración válida: Base 2, Potencia 256, 100 bits',
             'base': 2,
             'potencia': 256,
             'bits': 100,
             'debe_fallar': False
         },
         {
-            'nombre': 'Configuración válida: Base 5, Potencia 125 (5^3), 50 bits',
+            'nombre': 'Configuración válida: Base 5, Potencia 125, 50 bits',
             'base': 5,
             'potencia': 125,
             'bits': 50,
@@ -108,7 +110,7 @@ def prueba_base2_todas_potencias():
     """Prueba todas las potencias permitidas de base 2"""
     separador("PRUEBA 2: TODAS LAS POTENCIAS DE BASE 2")
     
-    potencias = [2, 4, 16, 256, 65536, 4294967296, 18446744073709551616]
+    potencias = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
     texto_prueba = "Test Base 2"
     datos_binarios = bytes_a_binario(texto_prueba.encode('utf-8'))
     
@@ -138,7 +140,7 @@ def prueba_base5_todas_potencias():
     """Prueba todas las potencias permitidas de base 5"""
     separador("PRUEBA 3: TODAS LAS POTENCIAS DE BASE 5")
     
-    potencias = [5, 25, 125, 625]
+    potencias = [25, 125, 625, 3125, 15625]
     texto_prueba = "Test Base 5 - Teoría de la información"
     datos_binarios = bytes_a_binario(texto_prueba.encode('utf-8'))
     
@@ -259,8 +261,8 @@ def prueba_integridad_imagen():
     configuraciones = [
         {'base': 2, 'potencia': 256, 'bits': 100},
         {'base': 5, 'potencia': 625, 'bits': 100},
-        {'base': 2, 'potencia': 65536, 'bits': 200},
-        {'base': 5, 'potencia': 125, 'bits': 50}
+        {'base': 2, 'potencia': 512, 'bits': 200},
+        {'base': 5, 'potencia': 3125, 'bits': 50}
     ]
     
     for i, config in enumerate(configuraciones, 1):
@@ -320,7 +322,7 @@ def prueba_casos_extremos():
     
     print("\nCaso 4: Un solo bit")
     datos_un_bit = "1"
-    codificador_min = CodificadorUniversal(base=5, potencia=5, bits_por_bloque=10, verbose=False)
+    codificador_min = CodificadorUniversal(base=5, potencia=25, bits_por_bloque=10, verbose=False)
     cod = codificador_min.codificar(datos_un_bit)
     dec = codificador_min.decodificar(cod)
     print(f"  Reversible: {'✓ SÍ' if datos_un_bit == dec else '✗ NO'}")
@@ -332,6 +334,43 @@ def prueba_casos_extremos():
     dec = codificador_max.decodificar(cod)
     print(f"  Reversible: {'✓ SÍ' if datos_grandes == dec else '✗ NO'}")
 
+
+
+
+def prueba_codificacion_imagen_archivo():
+    """Prueba de codificación/decodificación de archivo binario tipo imagen"""
+    separador("PRUEBA 8: CODIFICACIÓN/DECODIFICACIÓN DE IMAGEN")
+
+    import tempfile
+    import os
+
+    datos_imagen = bytes((i * 37) % 256 for i in range(2048))
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        ruta_original = os.path.join(tmp_dir, "imagen_original.bin")
+        ruta_reconstruida = os.path.join(tmp_dir, "imagen_reconstruida.bin")
+
+        with open(ruta_original, 'wb') as f:
+            f.write(datos_imagen)
+
+        cod = codificar_archivo_entrada(
+            ruta_entrada=ruta_original,
+            base=5,
+            potencia=625,
+            bits_por_bloque=100,
+            verbose=False
+        )
+
+        decodificar_a_archivo_salida(cod, ruta_reconstruida, verbose=False)
+
+        with open(ruta_original, 'rb') as f:
+            original = f.read()
+        with open(ruta_reconstruida, 'rb') as f:
+            reconstruida = f.read()
+
+        print(f"Tamaño original: {len(original)} bytes")
+        print(f"Tamaño reconstruido: {len(reconstruida)} bytes")
+        print(f"Integridad binaria: {'✓ SÍ' if original == reconstruida else '✗ NO'}")
 
 def ejecutar_todas_pruebas():
     """Ejecuta todas las pruebas del sistema"""
@@ -351,6 +390,7 @@ def ejecutar_todas_pruebas():
     prueba_padding()
     prueba_integridad_imagen()
     prueba_casos_extremos()
+    prueba_codificacion_imagen_archivo()
     
     tiempo_total = time.time() - inicio_total
     

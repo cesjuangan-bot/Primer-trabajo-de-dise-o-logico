@@ -26,8 +26,8 @@ class CodificadorUniversal:
     """
     
     # Definición estricta de potencias permitidas
-    POTENCIAS_BASE_2 = [2**1, 2**2, 2**4, 2**8, 2**16, 2**32, 2**64]
-    POTENCIAS_BASE_5 = [5**1, 5**2, 5**3, 5**4]  # 5, 25, 125, 625
+    POTENCIAS_BASE_2 = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    POTENCIAS_BASE_5 = [25, 125, 625, 3125, 15625]
     
     # Rango de tamaño de bloque permitido
     BITS_MINIMO = 10
@@ -648,3 +648,96 @@ def demostrar_sistema():
 
 if __name__ == "__main__":
     demostrar_sistema()
+
+
+def codificar_archivo_entrada(
+    ruta_entrada: str,
+    base: int,
+    potencia: int,
+    bits_por_bloque: int,
+    verbose: bool = False
+) -> Dict[str, Any]:
+    """
+    Lee un archivo binario (por ejemplo una imagen) y lo codifica.
+
+    Args:
+        ruta_entrada: Ruta del archivo a codificar
+        base: Base numérica permitida (2 o 5)
+        potencia: Potencia permitida para la base seleccionada
+        bits_por_bloque: Tamaño de bloque en bits
+        verbose: Activa salida detallada
+
+    Returns:
+        Diccionario de codificación con metadatos adicionales de archivo
+    """
+    ruta = Path(ruta_entrada)
+    datos_bytes = ruta.read_bytes()
+    datos_binarios = bytes_a_binario(datos_bytes)
+
+    codificador = CodificadorUniversal(
+        base=base,
+        potencia=potencia,
+        bits_por_bloque=bits_por_bloque,
+        verbose=verbose
+    )
+
+    datos_codificados = codificador.codificar(datos_binarios)
+    datos_codificados['archivo_origen'] = str(ruta)
+    datos_codificados['tamano_bytes_original'] = len(datos_bytes)
+
+    return datos_codificados
+
+
+def decodificar_a_archivo_salida(
+    datos_codificados: Dict[str, Any],
+    ruta_salida: str,
+    verbose: bool = False
+) -> Path:
+    """
+    Decodifica datos codificados y los escribe como archivo binario.
+
+    Args:
+        datos_codificados: Resultado generado por codificar/codificar_archivo_entrada
+        ruta_salida: Ruta destino del archivo decodificado
+        verbose: Activa salida detallada
+
+    Returns:
+        Path del archivo generado
+    """
+    codificador = CodificadorUniversal(
+        base=datos_codificados['base'],
+        potencia=datos_codificados['potencia'],
+        bits_por_bloque=datos_codificados['bits_por_bloque'],
+        verbose=verbose
+    )
+
+    datos_binarios = codificador.decodificar(datos_codificados)
+    datos_bytes = binario_a_bytes(datos_binarios)
+
+    tamano = datos_codificados.get('tamano_bytes_original')
+    if tamano is not None:
+        datos_bytes = datos_bytes[:tamano]
+
+    ruta_destino = Path(ruta_salida)
+    ruta_destino.write_bytes(datos_bytes)
+    return ruta_destino
+
+
+def decodificar_a_texto(
+    datos_codificados: Dict[str, Any],
+    encoding: str = 'utf-8',
+    errors: str = 'strict',
+    verbose: bool = False
+) -> str:
+    """
+    Decodifica y retorna el texto reconstruido desde datos codificados.
+    """
+    codificador = CodificadorUniversal(
+        base=datos_codificados['base'],
+        potencia=datos_codificados['potencia'],
+        bits_por_bloque=datos_codificados['bits_por_bloque'],
+        verbose=verbose
+    )
+    datos_binarios = codificador.decodificar(datos_codificados)
+    datos_bytes = binario_a_bytes(datos_binarios)
+    return datos_bytes.decode(encoding, errors=errors).rstrip('\x00')
